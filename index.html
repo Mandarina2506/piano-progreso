@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#17221f">
+  <meta name="description" content="Biblioteca personal de partituras de piano con seguimiento de progreso.">
+  <title>Piano Progreso</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#inicio" aria-label="Piano Progreso, inicio">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 40 40"><rect x="4" y="5" width="32" height="30" rx="7" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M11 8v14m6-14v14m6-14v14m6-14v14M8 22h24" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M13 9v8m12-8v8" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/></svg>
+        </span>
+        <span class="brand-copy"><strong>Piano</strong><span>PROGRESO</span></span>
+      </a>
+      <div class="topbar-actions">
+        <span class="local-label"><span class="status-dot"></span> Guardado en este dispositivo</span>
+        <button class="button button-quiet install-button" id="install-button" hidden>Instalar app</button>
+      </div>
+    </header>
+
+    <main id="inicio" class="main-content">
+      <section class="welcome-section">
+        <div class="welcome-copy">
+          <p class="eyebrow">TU ESPACIO DE ESTUDIO</p>
+          <h1>Que cada página<br><em>cuente.</em></h1>
+          <p class="welcome-description">Organizá tus partituras, retomá donde te quedaste y seguí tu progreso pieza por pieza.</p>
+        </div>
+        <div class="welcome-art" aria-hidden="true">
+          <div class="art-note note-one">♪</div><div class="art-note note-two">♫</div>
+          <div class="staff-lines"><i></i><i></i><i></i><i></i><i></i><b></b></div>
+          <div class="art-caption">PRACTICE<br>IN PROGRESS</div>
+        </div>
+        <button class="button button-primary add-main" id="open-add"><span class="plus">+</span> Agregar partitura</button>
+      </section>
+
+      <section class="stats-grid" aria-label="Resumen de progreso">
+        <article class="stat-card"><span class="stat-label">PARTITURAS</span><strong class="stat-number" id="stat-scores">0</strong><span class="stat-foot">En tu biblioteca</span></article>
+        <article class="stat-card"><span class="stat-label">PÁGINAS COMPLETADAS</span><strong class="stat-number" id="stat-done">0 <small>/ 0</small></strong><span class="stat-foot">De todas tus piezas</span></article>
+        <article class="stat-card stat-card-highlight"><span class="stat-label">PROGRESO GENERAL</span><strong class="stat-number" id="stat-progress">0%</strong><div class="stat-progress-track"><span id="stat-progress-bar"></span></div><span class="stat-foot">Avance de tu biblioteca</span></article>
+      </section>
+
+      <section class="library-section">
+        <div class="section-heading">
+          <div><p class="eyebrow">TU COLECCIÓN</p><h2>Mis partituras <span id="library-count">(0)</span></h2></div>
+          <label class="search-box"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><input id="search-input" type="search" placeholder="Buscar pieza o compositor" autocomplete="off"></label>
+        </div>
+        <div id="score-grid" class="score-grid"></div>
+        <div id="empty-state" class="empty-state">
+          <div class="empty-illustration" aria-hidden="true"><svg viewBox="0 0 100 100"><rect x="23" y="13" width="54" height="72" rx="5"/><path d="M34 31h32M34 42h32M34 53h32M34 64h20"/><path d="M62 12v20l9-4 6 4V12"/></svg></div>
+          <h3>Tu biblioteca empieza acá</h3>
+          <p>Agregá tu primera partitura en PDF o cargá imágenes de sus páginas. El progreso se calcula automáticamente según las páginas que marques como aprendidas.</p>
+          <button class="button button-secondary" id="empty-add">Cargar mi primera partitura</button>
+        </div>
+        <div id="no-results" class="no-results" hidden>No hay partituras que coincidan con esa búsqueda.</div>
+      </section>
+      <footer class="app-footer"><span>PIANO PROGRESO</span><span>Tus partituras, tu ritmo.</span></footer>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="add-modal" hidden>
+    <section class="modal-card add-modal-card" role="dialog" aria-modal="true" aria-labelledby="add-title">
+      <div class="modal-heading"><div><p class="eyebrow">NUEVA PIEZA</p><h2 id="add-title">Agregar partitura</h2></div><button class="icon-button" id="close-add" aria-label="Cerrar">×</button></div>
+      <form id="add-form">
+        <label class="field-label">Nombre de la pieza<input id="score-title" name="title" type="text" placeholder="Ej. Nocturno Op. 9 Nº 2" maxlength="90" required></label>
+        <label class="field-label">Compositor <span class="optional">(opcional)</span><input id="score-composer" name="composer" type="text" placeholder="Ej. Frédéric Chopin" maxlength="70"></label>
+        <label class="upload-zone" for="score-files" id="upload-zone">
+          <input id="score-files" type="file" accept="application/pdf,image/*,.pdf" multiple required>
+          <span class="upload-icon"><svg viewBox="0 0 24 24"><path d="M12 16V4m-4 4 4-4 4 4M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg></span>
+          <strong>Elegí tus archivos</strong><span class="upload-hint">Un PDF o varias imágenes (JPG, PNG, WEBP)</span>
+          <span id="selected-files" class="selected-files">Todavía no seleccionaste archivos</span>
+        </label>
+        <label class="field-label page-count-field" id="page-count-field">Cantidad de páginas <span class="optional">(se detecta automáticamente cuando es posible)</span><input id="page-count" type="number" min="1" max="500" value="1" inputmode="numeric"></label>
+        <p class="form-note">Los archivos se guardan localmente en este navegador. No se suben a un servidor.</p>
+        <div class="modal-actions"><button type="button" class="button button-quiet" id="cancel-add">Cancelar</button><button type="submit" class="button button-primary" id="save-score">Guardar partitura</button></div>
+      </form>
+    </section>
+  </div>
+
+  <div class="viewer-overlay" id="viewer" hidden>
+    <header class="viewer-topbar">
+      <button class="back-button" id="close-viewer"><span aria-hidden="true">←</span> Biblioteca</button>
+      <div class="viewer-title"><strong id="viewer-score-title">Partitura</strong><span id="viewer-score-composer"></span></div>
+      <button class="icon-button viewer-delete" id="delete-score" aria-label="Eliminar partitura" title="Eliminar partitura"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3m3 0-.8 13H6.8L6 7m4 3v6m4-6v6"/></svg></button>
+    </header>
+    <main class="viewer-main">
+      <section class="viewer-progress-card">
+        <div class="viewer-progress-top"><div><span class="eyebrow">PROGRESO DE ESTA PIEZA</span><strong id="viewer-percent">0%</strong></div><span id="viewer-pages-label" class="pages-label">0 de 0 páginas</span></div>
+        <div class="large-progress-track"><span id="viewer-progress-bar"></span></div>
+        <p id="viewer-progress-message">Marcá las páginas que ya podés tocar con seguridad.</p>
+      </section>
+      <section class="sheet-workspace">
+        <div class="sheet-toolbar"><span id="page-position">Página 1 de 1</span><div class="page-controls"><button class="page-arrow" id="prev-page" aria-label="Página anterior">‹</button><button class="page-arrow" id="next-page" aria-label="Página siguiente">›</button></div></div>
+        <div class="sheet-stage" id="sheet-stage"><div class="sheet-loading" id="sheet-loading">Cargando partitura…</div><canvas id="pdf-canvas" hidden></canvas><img id="image-page" alt="Página de la partitura" hidden><iframe id="pdf-fallback" title="Visor PDF" hidden></iframe></div>
+        <div class="page-completion-row"><div><strong id="page-state-title">Página pendiente</strong><span id="page-state-description">Cuando tengas esta página dominada, marcala como completada.</span></div><button class="button button-primary" id="toggle-page-done">Marcar como aprendida</button></div>
+      </section>
+      <section class="study-notes"><div><p class="eyebrow">APUNTES DE ESTUDIO</p><h3>Notas para esta pieza</h3></div><textarea id="score-notes" rows="3" placeholder="Anotá compases difíciles, digitación, tempo objetivo o lo que quieras recordar…"></textarea><div class="notes-footer"><span id="notes-status">Los cambios se guardan al presionar Guardar notas.</span><button class="button button-secondary button-small" id="save-notes">Guardar notas</button></div></section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

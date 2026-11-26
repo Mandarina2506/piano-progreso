@@ -1,0 +1,15 @@
+{
+  "name": "Piano Progreso",
+  "short_name": "Piano",
+  "description": "Tu biblioteca de partituras de piano con seguimiento de progreso.",
+  "lang": "es-AR",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f4ee",
+  "theme_color": "#17221f",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
