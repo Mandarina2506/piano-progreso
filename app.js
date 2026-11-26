@@ -6,8 +6,9 @@ if (window.pdfjsLib) {
 
 // Se conserva el nombre de la base de datos para mantener las partituras de la versión 1.
 const DB_NAME = 'piano-progreso-db';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const STORE = 'scores';
+const FOLDER_STORE = 'folders';
 const STATUS = {
   pending: { label: 'Pendiente', weight: 0 },
   learning: { label: 'Aprendiendo', weight: 25 },
@@ -17,6 +18,8 @@ const STATUS = {
 
 let db;
 let scores = [];
+let folders = [];
+let activeFolderId = 'all';
 let selectedFiles = [];
 let currentScore = null;
 let currentPdf = null;
@@ -34,7 +37,9 @@ const els = {
   fileInput: $('#score-files'), selectedFiles: $('#selected-files'), pageCount: $('#page-count'),
   pageCountField: $('#page-count-field'), saveScore: $('#save-score'), viewer: $('#viewer'),
   canvas: $('#pdf-canvas'), image: $('#image-page'), pdfFallback: $('#pdf-fallback'),
-  sheetLoading: $('#sheet-loading'), sheetStage: $('#sheet-stage'), toast: $('#toast')
+  sheetLoading: $('#sheet-loading'), sheetStage: $('#sheet-stage'), toast: $('#toast'),
+  folderTabs: $('#folder-tabs'), folderModal: $('#folder-modal'), folderManagerList: $('#folder-manager-list'),
+  scoreFolder: $('#score-folder')
 };
 
 function openDatabase() {
@@ -43,17 +48,18 @@ function openDatabase() {
     request.onupgradeneeded = () => {
       const database = request.result;
       if (!database.objectStoreNames.contains(STORE)) database.createObjectStore(STORE, { keyPath: 'id' });
-      // No se elimina ni se recrea el almacén anterior: los registros v1 se migran al leerlos.
+      if (!database.objectStoreNames.contains(FOLDER_STORE)) database.createObjectStore(FOLDER_STORE, { keyPath: 'id' });
+      // La actualización agrega carpetas sin borrar ni recrear las partituras existentes.
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error || new Error('No se pudo abrir la base de datos.'));
   });
 }
 
-function storeRequest(mode, action, value) {
+function storeRequest(mode, action, value, storeName = STORE) {
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE, mode);
-    const store = transaction.objectStore(STORE);
+    const transaction = db.transaction(storeName, mode);
+    const store = transaction.objectStore(storeName);
     const request = action === 'getAll' ? store.getAll()
       : action === 'get' ? store.get(value)
       : action === 'delete' ? store.delete(value)
@@ -112,6 +118,7 @@ function normalizeScore(score) {
   if (typeof score.goalDate !== 'string') score.goalDate = '';
   if (!Number.isFinite(Number(score.weeklyGoalMinutes))) score.weeklyGoalMinutes = 120;
   if (typeof score.notes !== 'string') score.notes = '';
+  if (typeof score.folderId !== 'string') score.folderId = '';
   return score;
 }
 function sectionsForPage(score, page) { return score.sections.filter(section => section.page === page); }
@@ -134,7 +141,14 @@ function showToast(message) {
 }
 
 async function refreshScores() {
-  const raw = await storeRequest('readonly', 'getAll');
+  const [raw, storedFolders] = await Promise.all([
+    storeRequest('readonly', 'getAll'),
+    storeRequest('readonly', 'getAll', undefined, FOLDER_STORE)
+  ]);
+  folders = storedFolders.sort((a, b) => a.name.localeCompare(b.name, 'es'));
+  if (activeFolderId !== 'all' && activeFolderId !== 'unfiled' && !folders.some(folder => folder.id === activeFolderId)) {
+    activeFolderId = 'all';
+  }
   const normalized = raw.map(original => ({
     score: normalizeScore(original),
     needsMigration: !Array.isArray(original.sections)
@@ -181,6 +195,134 @@ function renderWeeklyChart() {
   }).join('');
 }
 
+function folderName(folderId) {
+  return folders.find(folder => folder.id === folderId)?.name || 'Sin carpeta';
+}
+function renderFolderOptions() {
+  if (!els.scoreFolder) return;
+  const previous = els.scoreFolder.value;
+  els.scoreFolder.innerHTML = '<option value="">Sin carpeta</option>' + folders.map(folder =>
+    `<option value="${escapeHtml(folder.id)}">${escapeHtml(folder.name)}</option>`
+  ).join('');
+  if (folders.some(folder => folder.id === previous)) els.scoreFolder.value = previous;
+  else if (activeFolderId !== 'all' && activeFolderId !== 'unfiled' && folders.some(folder => folder.id === activeFolderId)) els.scoreFolder.value = activeFolderId;
+}
+function renderFolderManager() {
+  els.folderManagerList.innerHTML = folders.length ? folders.map(folder => {
+    const count = scores.filter(score => score.folderId === folder.id).length;
+    return `<form class="folder-manager-row" data-folder-id="${escapeHtml(folder.id)}">\n      <span class="folder-manager-icon" aria-hidden="true">▤</span>\n      <label class="sr-only" for="folder-edit-${escapeHtml(folder.id)}">Nombre de la carpeta</label>\n      <input id="folder-edit-${escapeHtml(folder.id)}" name="name" type="text" maxlength="35" value="${escapeHtml(folder.name)}" required>\n      <span class="folder-manager-count">${count} ${count === 1 ? 'obra' : 'obras'}</span>\n      <button class="button button-secondary button-small" type="submit">Guardar</button>\n      <button class="folder-delete-button" type="button" data-delete-folder aria-label="Eliminar carpeta ${escapeHtml(folder.name)}" title="Eliminar carpeta">×</button>\n    </form>`;
+  }).join('') : '<div class="folder-manager-empty">Todavía no creaste carpetas. Podés empezar con compositor, nivel o tipo de repertorio.</div>';
+}
+function renderFolderTabs() {
+  const allCount = scores.length;
+  const unfiledCount = scores.filter(score => !score.folderId || !folders.some(folder => folder.id === score.folderId)).length;
+  const tabs = [
+    { id: 'all', label: 'Todas', count: allCount },
+    { id: 'unfiled', label: 'Sin carpeta', count: unfiledCount },
+    ...folders.map(folder => ({ id: folder.id, label: folder.name, count: scores.filter(score => score.folderId === folder.id).length }))
+  ];
+  els.folderTabs.innerHTML = tabs.map(tab => `<button type="button" class="folder-tab ${activeFolderId === tab.id ? 'is-active' : ''}" data-folder-filter="${escapeHtml(tab.id)}" aria-pressed="${activeFolderId === tab.id}"><span class="folder-tab-icon" aria-hidden="true">${tab.id === 'all' ? '♫' : '▤'}</span><span>${escapeHtml(tab.label)}</span><small>${tab.count}</small></button>`).join('');
+}
+function renderFolderUI() {
+  renderFolderTabs();
+  renderFolderOptions();
+  renderFolderManager();
+}
+function openFolderModal() {
+  renderFolderManager();
+  els.folderModal.hidden = false;
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => $('#folder-name').focus(), 40);
+}
+function closeFolderModal() {
+  els.folderModal.hidden = true;
+  document.body.style.overflow = '';
+  $('#folder-create-form').reset();
+}
+async function createFolder(event) {
+  event.preventDefault();
+  const name = $('#folder-name').value.trim();
+  if (!name) return showToast('Escribí un nombre para la carpeta.');
+  if (folders.some(folder => folder.name.toLocaleLowerCase('es') === name.toLocaleLowerCase('es'))) {
+    return showToast('Ya existe una carpeta con ese nombre.');
+  }
+  const folder = { id: makeId(), name, createdAt: Date.now(), updatedAt: Date.now() };
+  try {
+    await storeRequest('readwrite', 'put', folder, FOLDER_STORE);
+    activeFolderId = folder.id;
+    $('#folder-name').value = '';
+    await refreshScores();
+    showToast(`Carpeta «${name}» creada.`);
+  } catch (error) {
+    console.error(error);
+    showToast('No se pudo crear la carpeta.');
+  }
+}
+async function renameFolder(event) {
+  event.preventDefault();
+  const row = event.target.closest('[data-folder-id]');
+  if (!row) return;
+  const folder = folders.find(item => item.id === row.dataset.folderId);
+  const name = new FormData(row).get('name')?.toString().trim();
+  if (!folder || !name) return showToast('El nombre de la carpeta no puede quedar vacío.');
+  if (folders.some(item => item.id !== folder.id && item.name.toLocaleLowerCase('es') === name.toLocaleLowerCase('es'))) {
+    return showToast('Ya existe otra carpeta con ese nombre.');
+  }
+  folder.name = name;
+  folder.updatedAt = Date.now();
+  try {
+    await storeRequest('readwrite', 'put', folder, FOLDER_STORE);
+    await refreshScores();
+    showToast('Carpeta renombrada.');
+  } catch (error) {
+    console.error(error);
+    showToast('No se pudo renombrar la carpeta.');
+  }
+}
+async function deleteFolder(folderId) {
+  const folder = folders.find(item => item.id === folderId);
+  if (!folder) return;
+  const assigned = scores.filter(score => score.folderId === folderId);
+  const confirmed = window.confirm(`¿Eliminar la carpeta «${folder.name}»? ${assigned.length} ${assigned.length === 1 ? 'partitura pasará' : 'partituras pasarán'} a «Sin carpeta». No se eliminarán las obras ni sus avances.`);
+  if (!confirmed) return;
+  try {
+    await new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE, FOLDER_STORE], 'readwrite');
+      const scoreStore = transaction.objectStore(STORE);
+      assigned.forEach(score => {
+        score.folderId = '';
+        score.updatedAt = Date.now();
+        scoreStore.put(score);
+      });
+      transaction.objectStore(FOLDER_STORE).delete(folderId);
+      transaction.oncomplete = resolve;
+      transaction.onerror = () => reject(transaction.error || new Error('No se pudo eliminar la carpeta.'));
+      transaction.onabort = () => reject(transaction.error || new Error('La eliminación fue cancelada.'));
+    });
+    if (activeFolderId === folderId) activeFolderId = 'all';
+    await refreshScores();
+    showToast('Carpeta eliminada. Las partituras siguen guardadas.');
+  } catch (error) {
+    console.error(error);
+    showToast('No se pudo eliminar la carpeta.');
+  }
+}
+async function moveScoreToFolder(scoreId, folderId) {
+  const score = scores.find(item => item.id === scoreId);
+  if (!score) return;
+  if (folderId && !folders.some(folder => folder.id === folderId)) return showToast('La carpeta seleccionada ya no existe.');
+  score.folderId = folderId;
+  score.updatedAt = Date.now();
+  try {
+    await storeRequest('readwrite', 'put', score);
+    await refreshScores();
+    showToast(folderId ? `Partitura movida a «${folderName(folderId)}».` : 'Partitura movida a «Sin carpeta».');
+  } catch (error) {
+    console.error(error);
+    showToast('No se pudo mover la partitura.');
+  }
+}
+
 function renderDashboard() {
   const totalPieces = scores.length;
   const totalMinutes = scores.reduce((sum, score) => sum + score.sessions.reduce((s, session) => s + (Number(session.minutes) || 0), 0), 0);
@@ -195,28 +337,44 @@ function renderDashboard() {
   $('#stat-sessions').textContent = `${weekSessions} ${weekSessions === 1 ? 'sesión' : 'sesiones'} · ${totalMinutes} min en total`;
   $('#library-count').textContent = `(${totalPieces})`;
   renderWeeklyChart();
+  renderFolderUI();
 
   const query = els.search.value.trim().toLocaleLowerCase('es');
-  const filtered = scores.filter(score => `${score.title} ${score.composer || ''}`.toLocaleLowerCase('es').includes(query));
+  const filtered = scores.filter(score => {
+    const matchesQuery = `${score.title} ${score.composer || ''}`.toLocaleLowerCase('es').includes(query);
+    const matchesFolder = activeFolderId === 'all'
+      || (activeFolderId === 'unfiled' && (!score.folderId || !folders.some(folder => folder.id === score.folderId)))
+      || score.folderId === activeFolderId;
+    return matchesQuery && matchesFolder;
+  });
   els.scoreGrid.innerHTML = filtered.map(score => {
     const percentage = progressOf(score);
     const goal = score.goalDescription ? `<div class="score-card-extra">✧ ${escapeHtml(score.goalDescription)}</div>` : '';
+    const currentFolderId = folders.some(folder => folder.id === score.folderId) ? score.folderId : '';
+    const folderLabel = currentFolderId ? folderName(currentFolderId) : 'Sin carpeta';
+    const folderOptions = `<option value="" ${!currentFolderId ? 'selected' : ''}>Sin carpeta</option>` + folders.map(folder =>
+      `<option value="${escapeHtml(folder.id)}" ${folder.id === currentFolderId ? 'selected' : ''}>${escapeHtml(folder.name)}</option>`
+    ).join('');
     return `<article class="score-card">
       <div class="score-card-top"><div class="score-symbol"><svg viewBox="0 0 24 24"><path d="M5 3h9l5 5v13H5zM14 3v5h5M8 13h8M8 17h8"/></svg></div><span class="score-type">${score.kind === 'pdf' ? 'DOCUMENTO PDF' : 'IMÁGENES'}</span></div>
       <h3>${escapeHtml(score.title)}</h3><div class="score-composer">${escapeHtml(score.composer || 'Compositor no indicado')}</div>
+      <div class="score-folder-label"><span aria-hidden="true">▤</span> ${escapeHtml(folderLabel)}</div>
       <div class="score-progress-meta"><span>${masteredCount(score)} de ${score.sections.length} fragmentos dominados</span><strong>${percentage}%</strong></div>
       <div class="score-progress-track"><span style="width:${percentage}%"></span></div>
       ${goal}
       <div class="score-card-footer"><span class="page-count">${pageTotal(score)} ${pageTotal(score) === 1 ? 'página' : 'páginas'} · ${totalPracticeMinutes(score)} min</span><button class="open-score" data-open-score="${escapeHtml(score.id)}">Abrir cuaderno ↗</button></div>
+      <label class="move-score-label">Mover a<select class="move-score-select" data-move-score="${escapeHtml(score.id)}" aria-label="Mover ${escapeHtml(score.title)} a otra carpeta">${folderOptions}</select></label>
     </article>`;
   }).join('');
 
   els.emptyState.hidden = totalPieces > 0;
+  els.noResults.textContent = totalPieces === 0 ? '' : (activeFolderId === 'all' && query ? 'No hay partituras que coincidan con esa búsqueda.' : 'No hay partituras en esta vista.');
   els.noResults.hidden = totalPieces === 0 || filtered.length > 0;
   els.scoreGrid.hidden = filtered.length === 0;
 }
 
 function openAddModal() {
+  renderFolderOptions();
   els.addModal.hidden = false;
   document.body.style.overflow = 'hidden';
   setTimeout(() => $('#score-title').focus(), 50);
@@ -287,6 +445,7 @@ async function handleAddScore(event) {
     const now = Date.now();
     const record = normalizeScore({
       id: makeId(), title, composer, kind: isPdf ? 'pdf' : 'images', pageCount,
+      folderId: els.scoreFolder.value || '',
       sections: Array.from({ length: pageCount }, (_, index) => ({ id: makeId(), page: index + 1, label: `Página ${index + 1}`, status: 'pending' })),
       file: isPdf ? selectedFiles[0] : null,
       images: isPdf ? [] : selectedFiles.map(file => ({ name: file.name, type: file.type, blob: file })),
@@ -591,6 +750,26 @@ function bindEvents() {
   });
   els.addForm.addEventListener('submit', handleAddScore);
   els.search.addEventListener('input', renderDashboard);
+  els.folderTabs.addEventListener('click', event => {
+    const button = event.target.closest('[data-folder-filter]');
+    if (!button) return;
+    activeFolderId = button.dataset.folderFilter;
+    renderDashboard();
+  });
+  $('#open-folders').addEventListener('click', openFolderModal);
+  $('#close-folders').addEventListener('click', closeFolderModal);
+  $('#done-folders').addEventListener('click', closeFolderModal);
+  els.folderModal.addEventListener('click', event => { if (event.target === els.folderModal) closeFolderModal(); });
+  $('#folder-create-form').addEventListener('submit', createFolder);
+  els.folderManagerList.addEventListener('submit', renameFolder);
+  els.folderManagerList.addEventListener('click', event => {
+    const button = event.target.closest('[data-delete-folder]');
+    if (button) deleteFolder(button.closest('[data-folder-id]')?.dataset.folderId);
+  });
+  els.scoreGrid.addEventListener('change', event => {
+    const select = event.target.closest('[data-move-score]');
+    if (select) moveScoreToFolder(select.dataset.moveScore, select.value);
+  });
   els.scoreGrid.addEventListener('click', event => {
     const button = event.target.closest('[data-open-score]');
     if (button) openScore(button.dataset.openScore);
@@ -609,6 +788,7 @@ function bindEvents() {
   window.addEventListener('keydown', event => {
     if (event.key === 'Escape') {
       if (!els.addModal.hidden) closeAddModal();
+      else if (!els.folderModal.hidden) closeFolderModal();
       else if (!els.viewer.hidden) closeViewer();
     }
     if (!els.viewer.hidden && event.key === 'ArrowRight') goToPage(currentPage + 1);

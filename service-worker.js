@@ -1,4 +1,4 @@
-const CACHE_NAME = 'piano-progreso-v2';
+const CACHE_NAME = 'piano-progreso-v3';
 const APP_FILES = [
   './', './index.html', './styles.css', './app.js', './manifest.webmanifest', './icon.svg',
   './assets/piano-rose-portrait.jpg', './assets/piano-rose-detail.jpg'

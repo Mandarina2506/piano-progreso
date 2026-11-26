@@ -1,11 +1,12 @@
-# Piano Progreso · Versión 2
+# Piano Progreso · Versión 3
 
 Aplicación web móvil instalable (PWA) para organizar partituras de piano y registrar el progreso de estudio. Esta versión mantiene la base de datos local de la versión anterior y suma seguimiento por fragmentos, objetivos, sesiones y estadísticas.
 
-## Novedades de la versión 2
+## Novedades de la versión 3
 
 - **Estética vintage:** piano oscuro, tonos sepia, papel cálido y detalles rojo vino. Incluye las dos imágenes de referencia compartidas.
 - **Biblioteca de partituras:** importar un PDF o varias imágenes JPG, PNG o WEBP.
+- **Carpetas:** crear, renombrar y eliminar carpetas; filtrar la biblioteca por carpeta; elegir una carpeta al importar; mover partituras entre carpetas. Al eliminar una carpeta, sus partituras pasan a «Sin carpeta» sin perder archivos, progreso, objetivos, apuntes ni sesiones.
 - **Lector integrado:** visor de PDF e imágenes con navegación entre páginas.
 - **Progreso por fragmentos:** cada obra comienza con una unidad por página. Se pueden añadir unidades para compases o secciones más pequeñas.
 - **Cuatro niveles de dominio:** Pendiente (0%), Aprendiendo (25%), En práctica (60%) y Dominado (100%).
@@ -19,7 +20,7 @@ Aplicación web móvil instalable (PWA) para organizar partituras de piano y reg
 
 ## Cómo probarla en una computadora
 
-1. Descargá y descomprimí `piano-progreso-v2.zip`.
+1. Descargá y descomprimí `piano-progreso-v3.zip`.
 2. Abrí la carpeta `piano-progreso` desde Visual Studio Code.
 3. Iniciá un servidor local. Por ejemplo, abrí una terminal en la carpeta y ejecutá:
 
@@ -37,7 +38,7 @@ Si ya tenés el repositorio de la versión 1, reemplazá sus archivos por el con
 
 ```bash
  git add .
- git commit -m "Actualiza Piano Progreso a la version 2"
+ git commit -m "Actualiza Piano Progreso a la version 3"
  git push
 ```
 
@@ -72,7 +73,7 @@ Dentro de una partitura, completá la fecha, duración en minutos y una nota opc
 
 ## Dónde se guardan los datos y qué pasa con la versión anterior
 
-La aplicación conserva el mismo nombre de base IndexedDB (`piano-progreso-db`) y el mismo almacén de partituras. La versión 2 agrega los nuevos campos al leer los registros existentes: las páginas que estaban marcadas como aprendidas se convierten en unidades con estado **Dominado** y las demás quedan **Pendiente**.
+La aplicación conserva el mismo nombre de base IndexedDB (`piano-progreso-db`) y el mismo almacén de partituras. La versión 3 actualiza la base a la versión 3 y agrega un almacén separado para carpetas; no elimina ni recrea las partituras existentes. La versión 2 agrega los nuevos campos al leer los registros existentes: las páginas que estaban marcadas como aprendidas se convierten en unidades con estado **Dominado** y las demás quedan **Pendiente**.
 
 Para conservar tus datos, actualizá los archivos en el mismo sitio/dirección y usá el mismo navegador y dispositivo. No borres los datos del sitio ni el almacenamiento del navegador. Los datos no se sincronizan entre distintos dispositivos ni se envían a un servidor. Hacé copias de seguridad de tus archivos originales de partituras.
 
@@ -86,8 +87,21 @@ El visor utiliza PDF.js desde CDN y necesita conexión a Internet para cargar es
 
 - `index.html`: pantallas, formularios y visor.
 - `styles.css`: diseño adaptable y estética vintage.
-- `app.js`: importación, biblioteca, fragmentos, objetivos, sesiones, estadísticas y almacenamiento.
+- `app.js`: importación, biblioteca, carpetas, fragmentos, objetivos, sesiones, estadísticas y almacenamiento.
 - `manifest.webmanifest`: configuración de instalación.
 - `service-worker.js`: caché de la aplicación.
 - `icon.svg`: ícono.
 - `assets/`: fotografías de piano utilizadas en la interfaz.
+
+
+## Cómo usar las carpetas
+
+1. En **Mis partituras**, pulsá **Organizar carpetas**.
+2. Escribí un nombre (por ejemplo: Chopin, Estudios, Repertorio actual o En aprendizaje) y creá la carpeta.
+3. Usá las pestañas para filtrar la biblioteca por carpeta.
+4. Al agregar una partitura, elegí dónde guardarla en **Guardar en carpeta**.
+5. Para mover una obra existente, utilizá el selector **Mover a** de su tarjeta.
+6. Para renombrar una carpeta, editá su nombre y presioná **Guardar**.
+7. Al eliminar una carpeta, las partituras se conservan y pasan a **Sin carpeta**.
+
+Las carpetas y su asignación se almacenan en IndexedDB en el mismo dispositivo y navegador que el resto de los datos.

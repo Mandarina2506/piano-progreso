@@ -83,6 +83,10 @@
             <button class="button button-secondary" id="open-add-secondary"><span class="button-plus">+</span> Añadir obra</button>
           </div>
         </div>
+        <div class="folder-toolbar" aria-label="Organizar biblioteca">
+          <div id="folder-tabs" class="folder-tabs" role="group" aria-label="Filtrar por carpeta"></div>
+          <button class="button button-secondary folder-manage-button" id="open-folders" type="button">⚙ Organizar carpetas</button>
+        </div>
         <div id="score-grid" class="score-grid"></div>
         <div id="empty-state" class="empty-state">
           <div class="empty-rose" aria-hidden="true">✳</div>
@@ -93,7 +97,7 @@
         </div>
         <div id="no-results" class="no-results" hidden>No hay partituras que coincidan con esa búsqueda.</div>
       </section>
-      <footer class="app-footer"><span>PIANO PROGRESO <i>·</i> VERSIÓN 2</span><span>Hecho para estudiar a tu propio ritmo.</span></footer>
+      <footer class="app-footer"><span>PIANO PROGRESO <i>·</i> VERSIÓN 3</span><span>Hecho para estudiar a tu propio ritmo.</span></footer>
     </main>
   </div>
 
@@ -104,6 +108,7 @@
       <form id="add-form">
         <label class="field-label">Nombre de la pieza<input id="score-title" name="title" type="text" placeholder="Ej. Nocturno Op. 9 Nº 2" maxlength="90" required></label>
         <label class="field-label">Compositor <span class="optional">(opcional)</span><input id="score-composer" name="composer" type="text" placeholder="Ej. Frédéric Chopin" maxlength="70"></label>
+        <label class="field-label">Guardar en carpeta <select id="score-folder" name="folder"><option value="">Sin carpeta</option></select></label>
         <label class="upload-zone" for="score-files" id="upload-zone">
           <input id="score-files" type="file" accept="application/pdf,image/jpeg,image/png,image/webp,.pdf" multiple required>
           <span class="upload-icon">♬</span><strong>Elegí tus archivos</strong><span class="upload-hint">Un PDF o varias imágenes JPG, PNG o WEBP</span>
@@ -113,6 +118,20 @@
         <p class="form-note">Los archivos se guardan localmente en este navegador. Al crear la obra se genera una unidad de estudio por página; luego podés dividirla en compases o fragmentos más pequeños.</p>
         <div class="modal-actions"><button type="button" class="button button-quiet" id="cancel-add">Cancelar</button><button type="submit" class="button button-primary" id="save-score">Guardar partitura</button></div>
       </form>
+    </section>
+  </div>
+
+  <!-- Administrador de carpetas -->
+  <div class="modal-backdrop" id="folder-modal" hidden>
+    <section class="modal-card folder-modal-card" role="dialog" aria-modal="true" aria-labelledby="folder-modal-title">
+      <div class="modal-heading"><div><p class="eyebrow">ORDEN DEL REPERTORIO</p><h2 id="folder-modal-title">Mis carpetas</h2></div><button class="icon-button" id="close-folders" aria-label="Cerrar">×</button></div>
+      <form id="folder-create-form" class="folder-create-form">
+        <label class="field-label">Nombre de la nueva carpeta<input id="folder-name" type="text" maxlength="35" placeholder="Ej. Chopin, Estudios, En aprendizaje" required></label>
+        <button class="button button-primary" type="submit">+ Crear carpeta</button>
+      </form>
+      <p class="form-note">Podés renombrar o eliminar carpetas cuando quieras. Al eliminar una carpeta, sus partituras pasan a «Sin carpeta»; no se borra ninguna obra ni su progreso.</p>
+      <div id="folder-manager-list" class="folder-manager-list"></div>
+      <div class="modal-actions"><button type="button" class="button button-quiet" id="done-folders">Listo</button></div>
     </section>
   </div>
 
