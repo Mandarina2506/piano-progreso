@@ -1,67 +1,93 @@
-# Piano Progreso
+# Piano Progreso · Versión 2
 
-Aplicación web móvil instalable para organizar partituras de piano y registrar el avance por páginas.
+Aplicación web móvil instalable (PWA) para organizar partituras de piano y registrar el progreso de estudio. Esta versión mantiene la base de datos local de la versión anterior y suma seguimiento por fragmentos, objetivos, sesiones y estadísticas.
 
-## Funciones incluidas
+## Novedades de la versión 2
 
-- Importar una partitura en PDF o cargar varias imágenes (JPG, PNG o WEBP) como páginas.
-- Biblioteca con búsqueda por título o compositor.
-- Visor de PDF e imágenes con navegación entre páginas.
-- Marcar cada página como aprendida o volver a dejarla pendiente.
-- Porcentaje de progreso por pieza y resumen general de toda la biblioteca.
-- Apuntes de estudio por partitura.
-- Guardado local en el dispositivo mediante IndexedDB.
-- Diseño adaptable a teléfonos, tablets y computadoras.
-- Base instalable como PWA cuando se sirve desde HTTPS o localhost.
+- **Estética vintage:** piano oscuro, tonos sepia, papel cálido y detalles rojo vino. Incluye las dos imágenes de referencia compartidas.
+- **Biblioteca de partituras:** importar un PDF o varias imágenes JPG, PNG o WEBP.
+- **Lector integrado:** visor de PDF e imágenes con navegación entre páginas.
+- **Progreso por fragmentos:** cada obra comienza con una unidad por página. Se pueden añadir unidades para compases o secciones más pequeñas.
+- **Cuatro niveles de dominio:** Pendiente (0%), Aprendiendo (25%), En práctica (60%) y Dominado (100%).
+- **Cálculo del progreso:** calcula primero el promedio de fragmentos de cada página y luego promedia las páginas, para que una página dividida en más partes no pese más que otra.
+- **Objetivos personales:** descripción de la meta, fecha objetivo y minutos semanales deseados.
+- **Bitácora de práctica:** fecha, duración y breve descripción de cada sesión.
+- **Estadísticas:** progreso general, minutos de la semana, total de tiempo y gráfico de los últimos siete días.
+- **Apuntes por obra:** notas de digitación, tempo, dinámica y pasajes difíciles.
+- **Guardado local:** los datos se guardan en IndexedDB dentro del navegador y dispositivo.
+- **PWA:** se puede instalar desde el navegador cuando está publicada en HTTPS.
 
 ## Cómo probarla en una computadora
 
-1. Descargá y descomprimí `piano-progreso.zip`.
-2. Abrí la carpeta del proyecto en Visual Studio Code.
-3. Instalá la extensión **Live Server** o usá un servidor local.
-4. Con Live Server, hacé clic derecho en `index.html` y elegí **Open with Live Server**.
-5. También podés abrir una terminal en la carpeta y ejecutar:
+1. Descargá y descomprimí `piano-progreso-v2.zip`.
+2. Abrí la carpeta `piano-progreso` desde Visual Studio Code.
+3. Iniciá un servidor local. Por ejemplo, abrí una terminal en la carpeta y ejecutá:
 
    ```bash
    python -m http.server 8000
    ```
 
-6. Abrí `http://localhost:8000` en el navegador.
+4. Abrí `http://localhost:8000` en el navegador.
 
-No necesita `npm install`: esta primera versión usa HTML, CSS y JavaScript sin un proceso de compilación.
+También podés usar la extensión Live Server de VS Code. No necesita `npm install`: usa HTML, CSS y JavaScript sin proceso de compilación.
 
-## Cómo instalarla en el celular
+## Publicar una actualización en GitHub Pages
 
-La instalación como aplicación requiere que el proyecto esté publicado en una dirección HTTPS. Una opción sencilla es publicarlo en GitHub Pages:
+Si ya tenés el repositorio de la versión 1, reemplazá sus archivos por el contenido de esta carpeta, conservando también la carpeta `assets` completa. Desde la terminal de VS Code, ejecutá:
 
-1. Creá un repositorio en GitHub y subí el contenido de esta carpeta.
-2. En el repositorio, entrá en **Settings → Pages**.
-3. En **Build and deployment**, seleccioná la rama principal y la carpeta raíz (`/root`).
-4. Abrí desde el celular la dirección HTTPS que GitHub Pages te proporcione.
-5. **Android:** en Chrome, abrí el menú y elegí **Instalar aplicación** o **Agregar a pantalla principal**.
-6. **iPhone:** abrí la página con Safari, tocá **Compartir** y elegí **Agregar a pantalla de inicio**.
+```bash
+ git add .
+ git commit -m "Actualiza Piano Progreso a la version 2"
+ git push
+```
+
+GitHub Pages volverá a publicar el sitio después de unos instantes. No crees un repositorio nuevo si querés seguir usando la misma dirección web.
+
+Si todavía no activaste Pages: en GitHub abrí **Settings → Pages**, elegí **Deploy from a branch**, seleccioná `main` y la carpeta `/(root)`, y guardá.
+
+## Instalarla en el celular
+
+1. Abrí la dirección HTTPS de GitHub Pages desde el celular.
+2. En Android, abrí el menú de Chrome y elegí **Instalar aplicación** o **Agregar a pantalla de inicio**.
+3. En iPhone, abrí el sitio en Safari, tocá **Compartir** y elegí **Agregar a pantalla de inicio**.
 
 ## Cómo se calcula el progreso
 
-Cada página representa una unidad de avance. Por ejemplo, si una partitura tiene 8 páginas y marcaste 3 como aprendidas, el progreso será:
+Cada fragmento tiene un nivel:
 
-`3 / 8 × 100 = 37,5 %`, que se muestra redondeado como **38 %**.
+| Nivel | Valor de progreso |
+|---|---:|
+| Pendiente | 0% |
+| Aprendiendo | 25% |
+| En práctica | 60% |
+| Dominado | 100% |
 
-El porcentaje general se calcula sumando todas las páginas completadas y dividiéndolas por el total de páginas de todas las partituras.
+El porcentaje de cada página es el promedio de sus fragmentos. El porcentaje de la obra es el promedio de todas sus páginas. Ejemplo: si una página tiene dos fragmentos, uno Dominado (100%) y otro En práctica (60%), el avance de esa página es 80%. Es una estimación basada en el nivel que vos seleccionás: la aplicación no escucha ni evalúa automáticamente cómo tocás el piano.
 
-## Dónde se guardan los datos
+Al cargar una obra se crea una unidad inicial por página. Cuando agregás el primer fragmento manual en una página, la unidad general pendiente de esa página se reemplaza automáticamente. Después podés añadir más compases o secciones para esa misma página.
 
-Las partituras y el progreso se guardan en IndexedDB, dentro del navegador y del dispositivo donde se cargaron. No se envían a un servidor. Por eso, los datos no se sincronizan automáticamente entre el teléfono y la computadora. No borres los datos del navegador ni desinstales/limpies el almacenamiento del sitio sin hacer antes una copia de los archivos originales.
+## Cómo registrar una sesión
 
-## Nota sobre los PDF
+Dentro de una partitura, completá la fecha, duración en minutos y una nota opcional sobre lo que trabajaste. El registro aparece en las sesiones recientes y suma al gráfico semanal.
 
-El visor utiliza PDF.js desde CDN para mostrar los PDF dentro de la aplicación y detectar sus páginas. Para esa función se necesita conexión a Internet al cargar el lector. Las imágenes guardadas pueden seguir consultándose desde el almacenamiento del dispositivo, una vez que la aplicación haya sido cargada.
+## Dónde se guardan los datos y qué pasa con la versión anterior
 
-## Estructura
+La aplicación conserva el mismo nombre de base IndexedDB (`piano-progreso-db`) y el mismo almacén de partituras. La versión 2 agrega los nuevos campos al leer los registros existentes: las páginas que estaban marcadas como aprendidas se convierten en unidades con estado **Dominado** y las demás quedan **Pendiente**.
 
-- `index.html`: estructura de pantallas y formularios.
-- `styles.css`: diseño adaptable a móvil.
-- `app.js`: biblioteca, importación, visor, progreso y almacenamiento local.
-- `manifest.webmanifest`: configuración de instalación PWA.
-- `service-worker.js`: caché de los archivos principales de la aplicación.
-- `icon.svg`: ícono de la aplicación.
+Para conservar tus datos, actualizá los archivos en el mismo sitio/dirección y usá el mismo navegador y dispositivo. No borres los datos del sitio ni el almacenamiento del navegador. Los datos no se sincronizan entre distintos dispositivos ni se envían a un servidor. Hacé copias de seguridad de tus archivos originales de partituras.
+
+**Atención:** `localhost`, GitHub Pages y distintos navegadores tienen almacenamientos separados. Los datos cargados mientras probabas en `localhost` no aparecen automáticamente en la versión publicada.
+
+## Nota sobre los PDF y uso sin conexión
+
+El visor utiliza PDF.js desde CDN y necesita conexión a Internet para cargar esa biblioteca. La aplicación y sus imágenes de interfaz se cachean para el uso como PWA, pero la primera carga de PDF puede requerir conexión.
+
+## Estructura del proyecto
+
+- `index.html`: pantallas, formularios y visor.
+- `styles.css`: diseño adaptable y estética vintage.
+- `app.js`: importación, biblioteca, fragmentos, objetivos, sesiones, estadísticas y almacenamiento.
+- `manifest.webmanifest`: configuración de instalación.
+- `service-worker.js`: caché de la aplicación.
+- `icon.svg`: ícono.
+- `assets/`: fotografías de piano utilizadas en la interfaz.

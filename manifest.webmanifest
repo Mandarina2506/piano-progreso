@@ -1,13 +1,13 @@
 {
-  "name": "Piano Progreso",
+  "name": "Piano Progreso · Cuaderno de estudio",
   "short_name": "Piano",
-  "description": "Tu biblioteca de partituras de piano con seguimiento de progreso.",
+  "description": "Biblioteca personal de partituras, objetivos y seguimiento de práctica de piano.",
   "lang": "es-AR",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f5f4ee",
-  "theme_color": "#17221f",
+  "background_color": "#15110f",
+  "theme_color": "#17120f",
   "orientation": "portrait",
   "icons": [
     { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
