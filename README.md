@@ -1,107 +1,129 @@
-# Piano Progreso · Versión 3
+# Piano Progreso v4.0
 
-Aplicación web móvil instalable (PWA) para organizar partituras de piano y registrar el progreso de estudio. Esta versión mantiene la base de datos local de la versión anterior y suma seguimiento por fragmentos, objetivos, sesiones y estadísticas.
+Aplicación web progresiva (PWA) para organizar partituras de piano, estudiar por fragmentos y registrar el progreso.
 
-## Novedades de la versión 3
+## Funciones
 
-- **Estética vintage:** piano oscuro, tonos sepia, papel cálido y detalles rojo vino. Incluye las dos imágenes de referencia compartidas.
 - **Biblioteca de partituras:** importar un PDF o varias imágenes JPG, PNG o WEBP.
-- **Carpetas:** crear, renombrar y eliminar carpetas; filtrar la biblioteca por carpeta; elegir una carpeta al importar; mover partituras entre carpetas. Al eliminar una carpeta, sus partituras pasan a «Sin carpeta» sin perder archivos, progreso, objetivos, apuntes ni sesiones.
+- **Carpetas:** crear, renombrar y eliminar carpetas; filtrar la biblioteca; elegir una carpeta al importar; mover partituras entre carpetas.
 - **Lector integrado:** visor de PDF e imágenes con navegación entre páginas.
-- **Progreso por fragmentos:** cada obra comienza con una unidad por página. Se pueden añadir unidades para compases o secciones más pequeñas.
+- **Progreso por fragmentos:** cada obra comienza con una unidad por página. Se pueden añadir unidades para compases o secciones.
 - **Cuatro niveles de dominio:** Pendiente (0%), Aprendiendo (25%), En práctica (60%) y Dominado (100%).
-- **Cálculo del progreso:** calcula primero el promedio de fragmentos de cada página y luego promedia las páginas, para que una página dividida en más partes no pese más que otra.
-- **Objetivos personales:** descripción de la meta, fecha objetivo y minutos semanales deseados.
-- **Bitácora de práctica:** fecha, duración y breve descripción de cada sesión.
-- **Estadísticas:** progreso general, minutos de la semana, total de tiempo y gráfico de los últimos siete días.
-- **Apuntes por obra:** notas de digitación, tempo, dinámica y pasajes difíciles.
-- **Guardado local:** los datos se guardan en IndexedDB dentro del navegador y dispositivo.
-- **PWA:** se puede instalar desde el navegador cuando está publicada en HTTPS.
+- **Objetivos por obra:** descripción, fecha objetivo y minutos semanales deseados.
+- **Bitácora:** registrar la fecha, duración y observaciones de cada sesión.
+- **Estadísticas:** progreso general, minutos de práctica, total de tiempo y gráfico de los últimos siete días.
+- **Anotaciones sobre la partitura:** activar «Anotar página» y tocar/clicar en un punto de la página para guardar una nota anclada. Las notas se guardan por página y se pueden editar o eliminar.
+- **Metrónomo:** tempo de 30 a 240 BPM, compases 2/4, 3/4, 4/4 y 6/8, acento en el primer pulso. El tempo se conserva individualmente para cada obra.
+- **Calendario de estudio:** programar prácticas por fecha, asociarlas a una partitura o marcarlas como práctica libre, indicar duración y objetivo, marcar tareas como completadas y eliminarlas.
+- **Objetivo semanal global:** definir un objetivo en minutos; el indicador suma las sesiones reales registradas dentro de la semana actual. Marcar una práctica del calendario como completada no agrega automáticamente una sesión a la bitácora.
+- **Copias de seguridad:** exportar partituras y los archivos PDF/imágenes originales, carpetas, fragmentos, anotaciones, objetivos, sesiones, agenda y configuración semanal en un archivo JSON. Se puede restaurar desde ese archivo.
+- **PWA:** instalable desde el navegador cuando está publicada mediante HTTPS.
 
 ## Cómo probarla en una computadora
 
-1. Descargá y descomprimí `piano-progreso-v3.zip`.
-2. Abrí la carpeta `piano-progreso` desde Visual Studio Code.
-3. Iniciá un servidor local. Por ejemplo, abrí una terminal en la carpeta y ejecutá:
+1. Descomprimí `piano-progreso-v4.zip`.
+2. Abrí la carpeta `piano-progreso` en Visual Studio Code (o abrí directamente la carpeta extraída si conserva ese nombre).
+3. Iniciá un servidor local, por ejemplo:
 
    ```bash
    python -m http.server 8000
    ```
 
-4. Abrí `http://localhost:8000` en el navegador.
+4. Abrí `http://localhost:8000`.
 
-También podés usar la extensión Live Server de VS Code. No necesita `npm install`: usa HTML, CSS y JavaScript sin proceso de compilación.
+No requiere `npm install`: utiliza HTML, CSS y JavaScript sin proceso de compilación.
 
 ## Publicar una actualización en GitHub Pages
 
-Si ya tenés el repositorio de la versión 1, reemplazá sus archivos por el contenido de esta carpeta, conservando también la carpeta `assets` completa. Desde la terminal de VS Code, ejecutá:
+Si ya tenés el repositorio de Piano Progreso, no hace falta crear otro:
 
-```bash
- git add .
- git commit -m "Actualiza Piano Progreso a la version 3"
- git push
-```
+1. Descargá y extraé la versión nueva.
+2. Copiá el contenido de esta carpeta sobre el contenido del proyecto local existente.
+3. Conservá la carpeta `.git` del repositorio local. No la reemplaces ni la elimines.
+4. Desde la terminal de VS Code, ejecutá:
 
-GitHub Pages volverá a publicar el sitio después de unos instantes. No crees un repositorio nuevo si querés seguir usando la misma dirección web.
+   ```bash
+   git add .
+   git commit -m "Actualiza Piano Progreso a la version 4"
+   git push
+   ```
 
-Si todavía no activaste Pages: en GitHub abrí **Settings → Pages**, elegí **Deploy from a branch**, seleccioná `main` y la carpeta `/(root)`, y guardá.
+GitHub Pages publicará la actualización. La URL no cambia si mantenés el mismo repositorio.
 
-## Instalarla en el celular
+## Actualización y conservación de datos existentes
 
-1. Abrí la dirección HTTPS de GitHub Pages desde el celular.
-2. En Android, abrí el menú de Chrome y elegí **Instalar aplicación** o **Agregar a pantalla de inicio**.
-3. En iPhone, abrí el sitio en Safari, tocá **Compartir** y elegí **Agregar a pantalla de inicio**.
+La aplicación conserva el nombre de la base IndexedDB (`piano-progreso-db`) y los almacenes `scores` y `folders`. La versión 4 incrementa la versión de la base a 4 y agrega el almacén `planner`; no borra ni recrea los datos de partituras y carpetas. Los registros existentes reciben los campos nuevos de anotaciones y tempo con valores iniciales. El service worker utiliza una caché v4 para descargar los archivos nuevos y retirar la caché anterior.
+
+**Antes de actualizar, es recomendable descargar una copia de seguridad desde la v3 si ya tenés muchas partituras cargadas.** Después de publicar v4, abrí la misma dirección web con el mismo navegador y dispositivo. No borres los datos del sitio ni el almacenamiento del navegador. No uses una URL distinta para probar la actualización si necesitás acceder a los datos existentes.
+
+`localhost`, GitHub Pages y distintos navegadores mantienen almacenamientos separados. Los datos de la versión local no aparecen automáticamente en el sitio publicado.
+
+## Copias de seguridad y restauración
+
+1. Abrí la sección **Calendario de estudio** y buscá **Copias de seguridad**.
+2. Pulsá **Descargar copia**. Se descarga un archivo `piano-progreso-copia-AAAA-MM-DD.json`.
+3. Guardá ese archivo fuera del navegador, por ejemplo en una computadora, pendrive o almacenamiento en la nube.
+4. Para recuperar los datos, pulsá **Restaurar copia** y elegí un JSON generado por Piano Progreso.
+5. Confirmá la operación.
+
+**Atención:** restaurar reemplaza todos los datos locales actuales (partituras, carpetas, agenda y ajustes) por el contenido del archivo elegido. No combina las dos bibliotecas. Antes de restaurar, descargá una copia de seguridad de los datos actuales si necesitás conservarlos. Los archivos de respaldo pueden ser grandes porque incluyen los PDF y las imágenes, no solo los registros.
+
+## Usar el metrónomo
+
+1. Abrí una partitura.
+2. En el panel lateral, ajustá el BPM con el control de velocidad.
+3. Elegí el compás: 2/4, 3/4, 4/4 o 6/8.
+4. Pulsá **Iniciar** y luego **Detener** para pararlo.
+
+El primer pulso de cada compás se reproduce con un tono más agudo. El navegador necesita permitir la reproducción de audio; el metrónomo se detiene al cerrar la partitura.
+
+## Usar el calendario
+
+1. En **Calendario de estudio**, elegí una fecha. Los controles laterales cambian el mes.
+2. En el formulario, seleccioná una partitura o dejá «Práctica libre».
+3. Indicá los minutos previstos y el objetivo de la sesión.
+4. Pulsá **Programar práctica**. La sesión aparecerá en la agenda del día.
+5. Marcá la casilla cuando termines o eliminá una actividad que ya no necesites.
+6. En **Objetivo semanal**, definí cuántos minutos querés practicar. El progreso se calcula a partir de las sesiones que hayas registrado en la bitácora de cada partitura.
+
+Las actividades programadas y las sesiones realizadas son datos distintos: completar una actividad del calendario no registra por sí solo el tiempo real practicado.
+
+## Anotar directamente sobre una partitura
+
+1. Abrí una obra y navegá hasta la página que querés marcar.
+2. Pulsá **Anotar página**.
+3. Tocá o hacé clic sobre el lugar de la hoja donde querés colocar la marca.
+4. Escribí la indicación (por ejemplo, digitación, dinámica, tempo o compases difíciles).
+5. La marca numerada se verá sobre la partitura. Debajo de la hoja aparecerá la lista de anotaciones de esa página; podés editar o eliminar cada una.
+
+Las posiciones se guardan como porcentajes relativos al tamaño de la página para que la marca se mantenga ubicada al cambiar el tamaño de pantalla. El visor PDF alternativo del navegador (cuando PDF.js no está disponible) no permite anclar anotaciones con precisión; en ese caso, la función indica que no está disponible.
 
 ## Cómo se calcula el progreso
 
-Cada fragmento tiene un nivel:
-
-| Nivel | Valor de progreso |
+| Nivel | Valor |
 |---|---:|
 | Pendiente | 0% |
 | Aprendiendo | 25% |
 | En práctica | 60% |
 | Dominado | 100% |
 
-El porcentaje de cada página es el promedio de sus fragmentos. El porcentaje de la obra es el promedio de todas sus páginas. Ejemplo: si una página tiene dos fragmentos, uno Dominado (100%) y otro En práctica (60%), el avance de esa página es 80%. Es una estimación basada en el nivel que vos seleccionás: la aplicación no escucha ni evalúa automáticamente cómo tocás el piano.
+El porcentaje de una página es el promedio de sus fragmentos. El porcentaje de la obra es el promedio de todas las páginas. Es una estimación basada en el nivel seleccionado manualmente, no una evaluación automática de la interpretación.
 
-Al cargar una obra se crea una unidad inicial por página. Cuando agregás el primer fragmento manual en una página, la unidad general pendiente de esa página se reemplaza automáticamente. Después podés añadir más compases o secciones para esa misma página.
+## Dónde se guardan los datos y limitaciones
 
-## Cómo registrar una sesión
-
-Dentro de una partitura, completá la fecha, duración en minutos y una nota opcional sobre lo que trabajaste. El registro aparece en las sesiones recientes y suma al gráfico semanal.
-
-## Dónde se guardan los datos y qué pasa con la versión anterior
-
-La aplicación conserva el mismo nombre de base IndexedDB (`piano-progreso-db`) y el mismo almacén de partituras. La versión 3 actualiza la base a la versión 3 y agrega un almacén separado para carpetas; no elimina ni recrea las partituras existentes. La versión 2 agrega los nuevos campos al leer los registros existentes: las páginas que estaban marcadas como aprendidas se convierten en unidades con estado **Dominado** y las demás quedan **Pendiente**.
-
-Para conservar tus datos, actualizá los archivos en el mismo sitio/dirección y usá el mismo navegador y dispositivo. No borres los datos del sitio ni el almacenamiento del navegador. Los datos no se sincronizan entre distintos dispositivos ni se envían a un servidor. Hacé copias de seguridad de tus archivos originales de partituras.
-
-**Atención:** `localhost`, GitHub Pages y distintos navegadores tienen almacenamientos separados. Los datos cargados mientras probabas en `localhost` no aparecen automáticamente en la versión publicada.
-
-## Nota sobre los PDF y uso sin conexión
-
-El visor utiliza PDF.js desde CDN y necesita conexión a Internet para cargar esa biblioteca. La aplicación y sus imágenes de interfaz se cachean para el uso como PWA, pero la primera carga de PDF puede requerir conexión.
+- Las partituras, sesiones, anotaciones, carpetas y agenda se almacenan localmente en IndexedDB dentro del navegador y dispositivo.
+- No existe sincronización entre dispositivos ni una cuenta de usuario. Para mover los datos, usá el archivo de copia de seguridad.
+- Para abrir PDF, la aplicación usa PDF.js desde CDN. La primera carga del lector PDF requiere conexión a Internet si la biblioteca no está cacheada.
+- El audio del metrónomo depende de la compatibilidad del navegador con Web Audio API.
+- El calendario es un planificador personal; no envía notificaciones ni recordatorios del sistema operativo.
 
 ## Estructura del proyecto
 
-- `index.html`: pantallas, formularios y visor.
+- `index.html`: pantallas, formularios, calendario y visor.
 - `styles.css`: diseño adaptable y estética vintage.
-- `app.js`: importación, biblioteca, carpetas, fragmentos, objetivos, sesiones, estadísticas y almacenamiento.
+- `app.js`: biblioteca, carpetas, fragmentos, bitácora, estadísticas y base IndexedDB.
+- `enhancements.js`: copias de seguridad, metrónomo, agenda y anotaciones sobre la partitura.
 - `manifest.webmanifest`: configuración de instalación.
-- `service-worker.js`: caché de la aplicación.
-- `icon.svg`: ícono.
-- `assets/`: fotografías de piano utilizadas en la interfaz.
-
-
-## Cómo usar las carpetas
-
-1. En **Mis partituras**, pulsá **Organizar carpetas**.
-2. Escribí un nombre (por ejemplo: Chopin, Estudios, Repertorio actual o En aprendizaje) y creá la carpeta.
-3. Usá las pestañas para filtrar la biblioteca por carpeta.
-4. Al agregar una partitura, elegí dónde guardarla en **Guardar en carpeta**.
-5. Para mover una obra existente, utilizá el selector **Mover a** de su tarjeta.
-6. Para renombrar una carpeta, editá su nombre y presioná **Guardar**.
-7. Al eliminar una carpeta, las partituras se conservan y pasan a **Sin carpeta**.
-
-Las carpetas y su asignación se almacenan en IndexedDB en el mismo dispositivo y navegador que el resto de los datos.
+- `service-worker.js`: caché de la PWA.
+- `icon.svg`: ícono de la aplicación.
+- `assets/`: fotografías usadas en la interfaz.

@@ -6,9 +6,10 @@ if (window.pdfjsLib) {
 
 // Se conserva el nombre de la base de datos para mantener las partituras de la versión 1.
 const DB_NAME = 'piano-progreso-db';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 const STORE = 'scores';
 const FOLDER_STORE = 'folders';
+const PLANNER_STORE = 'planner';
 const STATUS = {
   pending: { label: 'Pendiente', weight: 0 },
   learning: { label: 'Aprendiendo', weight: 25 },
@@ -49,7 +50,8 @@ function openDatabase() {
       const database = request.result;
       if (!database.objectStoreNames.contains(STORE)) database.createObjectStore(STORE, { keyPath: 'id' });
       if (!database.objectStoreNames.contains(FOLDER_STORE)) database.createObjectStore(FOLDER_STORE, { keyPath: 'id' });
-      // La actualización agrega carpetas sin borrar ni recrear las partituras existentes.
+      if (!database.objectStoreNames.contains(PLANNER_STORE)) database.createObjectStore(PLANNER_STORE, { keyPath: 'id' });
+      // La actualización agrega agenda sin borrar ni recrear partituras ni carpetas existentes.
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error || new Error('No se pudo abrir la base de datos.'));
@@ -119,6 +121,9 @@ function normalizeScore(score) {
   if (!Number.isFinite(Number(score.weeklyGoalMinutes))) score.weeklyGoalMinutes = 120;
   if (typeof score.notes !== 'string') score.notes = '';
   if (typeof score.folderId !== 'string') score.folderId = '';
+  if (!Array.isArray(score.annotations)) score.annotations = [];
+  if (!Number.isFinite(Number(score.metronomeBpm))) score.metronomeBpm = 80;
+  score.metronomeBpm = Math.min(240, Math.max(30, Math.round(Number(score.metronomeBpm) || 80)));
   return score;
 }
 function sectionsForPage(score, page) { return score.sections.filter(section => section.page === page); }
@@ -156,6 +161,8 @@ async function refreshScores() {
       || typeof original.goalDescription !== 'string'
       || typeof original.goalDate !== 'string'
       || !Number.isFinite(Number(original.weeklyGoalMinutes))
+      || !Array.isArray(original.annotations)
+      || !Number.isFinite(Number(original.metronomeBpm))
   }));
   scores = normalized.map(item => item.score)
     .sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
@@ -164,6 +171,7 @@ async function refreshScores() {
     if (item.needsMigration) await storeRequest('readwrite', 'put', item.score);
   }
   renderDashboard();
+  window.dispatchEvent(new Event('piano:scores-updated'));
 }
 
 function getLastSevenDays() {
@@ -450,7 +458,7 @@ async function handleAddScore(event) {
       file: isPdf ? selectedFiles[0] : null,
       images: isPdf ? [] : selectedFiles.map(file => ({ name: file.name, type: file.type, blob: file })),
       sessions: [], goalDescription: '', goalDate: '', weeklyGoalMinutes: 120,
-      notes: '', createdAt: now, updatedAt: now
+      notes: '', annotations: [], metronomeBpm: 80, createdAt: now, updatedAt: now
     });
     await storeRequest('readwrite', 'put', record);
     closeAddModal();
@@ -499,6 +507,7 @@ async function openScore(id) {
   els.viewer.hidden = false;
   document.body.style.overflow = 'hidden';
   renderViewerData();
+  window.dispatchEvent(new Event('piano:score-opened'));
   await renderCurrentPage();
 }
 
@@ -525,6 +534,7 @@ function renderViewerData() {
   renderUnitList();
   renderGoalStatus();
   renderSessions();
+  window.dispatchEvent(new Event('piano:viewer-data-updated'));
 }
 function renderUnitList() {
   const units = currentScore.sections.slice().sort((a, b) => a.page - b.page || a.label.localeCompare(b.label, 'es'));
@@ -581,9 +591,11 @@ async function renderCurrentPage() {
       const image = currentScore.images[currentPage - 1];
       if (!image) throw new Error('No se encontró la imagen de esta página.');
       currentImageUrl = URL.createObjectURL(image.blob);
+      els.image.onload = () => window.dispatchEvent(new Event('piano:page-rendered'));
       els.image.src = currentImageUrl;
       els.image.hidden = false;
       els.sheetLoading.hidden = true;
+      window.dispatchEvent(new Event('piano:page-rendered'));
       return;
     }
     if (!window.pdfjsLib) {
@@ -591,6 +603,7 @@ async function renderCurrentPage() {
       els.pdfFallback.src = `${currentPdfUrl}#page=${currentPage}&toolbar=1`;
       els.pdfFallback.hidden = false;
       els.sheetLoading.hidden = true;
+      window.dispatchEvent(new Event('piano:page-rendered'));
       return;
     }
     if (!currentPdf) currentPdf = await pdfjsLib.getDocument({ data: await currentScore.file.arrayBuffer() }).promise;
@@ -608,6 +621,7 @@ async function renderCurrentPage() {
     els.canvas.hidden = false;
     await page.render({ canvasContext: context, viewport }).promise;
     els.sheetLoading.hidden = true;
+    window.dispatchEvent(new Event('piano:page-rendered'));
   } catch (error) {
     console.error(error);
     els.sheetLoading.textContent = 'No se pudo mostrar esta página. Comprobá que el archivo no esté dañado.';
@@ -698,6 +712,7 @@ function closeViewer() {
   currentPdf = null;
   releaseViewerUrls();
   currentScore = null;
+  window.dispatchEvent(new Event('piano:viewer-closed'));
 }
 function goToPage(nextPage) {
   if (!currentScore) return;
@@ -705,6 +720,7 @@ function goToPage(nextPage) {
   if (nextPage < 1 || nextPage > total) return;
   currentPage = nextPage;
   renderViewerData();
+  window.dispatchEvent(new Event('piano:page-changed'));
   renderCurrentPage();
 }
 
@@ -803,6 +819,7 @@ async function init() {
   try {
     db = await openDatabase();
     await refreshScores();
+    window.dispatchEvent(new Event('piano:ready'));
   } catch (error) {
     console.error(error);
     showToast('El navegador no permitió guardar datos. Usá Chrome, Safari o Edge actualizados.');

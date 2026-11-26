@@ -22,6 +22,7 @@
       <nav class="top-nav" aria-label="Navegación principal">
         <a href="#biblioteca">Biblioteca</a>
         <a href="#estadisticas">Estadísticas</a>
+        <a href="#agenda">Agenda</a>
       </nav>
       <div class="topbar-actions">
         <span class="local-label"><span class="status-dot"></span> Datos en este dispositivo</span>
@@ -75,6 +76,48 @@
         </div>
       </section>
 
+
+      <section id="agenda" class="planner-section">
+        <div class="section-heading planner-heading">
+          <div><p class="eyebrow">PLANIFICACIÓN MUSICAL</p><h2>Calendario de estudio</h2><span class="section-note">Organizá tus prácticas y objetivos semanales.</span></div>
+          <div class="month-controls"><button class="page-arrow" id="calendar-prev" type="button" aria-label="Mes anterior">‹</button><strong id="calendar-month-label">Mes 2026</strong><button class="page-arrow" id="calendar-next" type="button" aria-label="Mes siguiente">›</button></div>
+        </div>
+        <div class="planner-layout">
+          <div class="calendar-card">
+            <div class="calendar-weekdays" aria-hidden="true"><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span></div>
+            <div class="calendar-grid" id="calendar-grid" aria-label="Calendario mensual"></div>
+            <div class="calendar-legend"><span><i class="legend-dot planned"></i> Práctica programada</span><span><i class="legend-dot completed"></i> Completada</span></div>
+          </div>
+          <aside class="planner-sidebar">
+            <section class="study-card planner-day-card">
+              <div class="card-heading"><div><p class="eyebrow">AGENDA DEL DÍA</p><h3 id="selected-day-label">Hoy</h3></div><span class="mini-symbol">♬</span></div>
+              <div id="selected-day-plans" class="selected-day-plans"></div>
+              <form id="plan-form" class="plan-form">
+                <label class="field-label">Fecha<input id="plan-date" type="date" required></label>
+                <label class="field-label">Partitura<select id="plan-score"><option value="">Práctica libre</option></select></label>
+                <div class="form-row"><label class="field-label">Duración prevista (min)<input id="plan-minutes" type="number" min="5" max="600" step="5" value="30" required></label></div>
+                <label class="field-label">Objetivo de la sesión<input id="plan-note" type="text" maxlength="120" placeholder="Ej. Practicar compases 1–8"></label>
+                <button class="button button-primary button-small" type="submit">+ Programar práctica</button>
+              </form>
+            </section>
+            <section class="study-card weekly-target-card">
+              <div class="card-heading"><div><p class="eyebrow">CONSTANCIA</p><h3>Objetivo semanal</h3></div><span class="mini-symbol">◷</span></div>
+              <form id="weekly-target-form" class="weekly-target-form">
+                <label class="field-label">Minutos de práctica por semana<input id="weekly-target-input" type="number" min="0" max="10000" step="15" value="120"></label>
+                <button class="button button-secondary button-small" type="submit">Guardar objetivo</button>
+              </form>
+              <div class="target-progress-copy"><strong id="weekly-target-progress">0 / 120 min</strong><span id="weekly-target-percent">0%</span></div>
+              <div class="large-progress-track"><span id="weekly-target-bar"></span></div>
+              <p class="goal-status">Se calcula con las sesiones que registrás como realizadas, no con las prácticas programadas.</p>
+            </section>
+          </aside>
+        </div>
+        <section class="backup-card">
+          <div class="backup-copy"><p class="eyebrow">PROTECCIÓN DE TUS DATOS</p><h3>Copias de seguridad</h3><p>Exportá partituras, archivos, carpetas, anotaciones, agenda, objetivos y sesiones. La restauración reemplaza los datos locales actuales.</p></div>
+          <div class="backup-actions"><button class="button button-secondary" id="export-backup" type="button">↓ Descargar copia</button><button class="button button-outline" id="import-backup-trigger" type="button">↑ Restaurar copia</button><input id="import-backup-file" type="file" accept="application/json,.json" hidden></div>
+        </section>
+      </section>
+
       <section id="biblioteca" class="library-section">
         <div class="section-heading library-heading">
           <div><p class="eyebrow">TU REPERTORIO</p><h2>Mis partituras <span id="library-count">(0)</span></h2></div>
@@ -97,7 +140,7 @@
         </div>
         <div id="no-results" class="no-results" hidden>No hay partituras que coincidan con esa búsqueda.</div>
       </section>
-      <footer class="app-footer"><span>PIANO PROGRESO <i>·</i> VERSIÓN 3</span><span>Hecho para estudiar a tu propio ritmo.</span></footer>
+      <footer class="app-footer"><span>PIANO PROGRESO <i>·</i> VERSIÓN 4</span><span>Hecho para estudiar a tu propio ritmo.</span></footer>
     </main>
   </div>
 
@@ -152,11 +195,22 @@
       <div class="viewer-columns">
         <section class="sheet-panel">
           <div class="sheet-toolbar"><span id="page-position">Página 1 de 1</span><div class="page-controls"><button class="page-arrow" id="prev-page" aria-label="Página anterior">‹</button><button class="page-arrow" id="next-page" aria-label="Página siguiente">›</button></div></div>
-          <div class="sheet-stage" id="sheet-stage"><div class="sheet-loading" id="sheet-loading">Cargando partitura…</div><canvas id="pdf-canvas" hidden></canvas><img id="image-page" alt="Página de la partitura" hidden><iframe id="pdf-fallback" title="Visor PDF" hidden></iframe></div>
+          <div class="sheet-stage" id="sheet-stage"><div class="sheet-loading" id="sheet-loading">Cargando partitura…</div><div class="sheet-page-wrap" id="sheet-page-wrap"><canvas id="pdf-canvas" hidden></canvas><img id="image-page" alt="Página de la partitura" hidden><div class="annotation-layer" id="annotation-layer"></div></div><iframe id="pdf-fallback" title="Visor PDF" hidden></iframe></div>
+          <div class="annotation-tools"><button class="button button-secondary button-small" id="add-annotation-mode" type="button">＋ Anotar página</button><span id="annotation-hint">Marcá un punto de la partitura para guardar una indicación.</span></div>
+          <div class="annotation-list" id="annotation-list"></div>
           <div class="sheet-footer"><span>LECTURA DE PARTITURA</span><span>USÁ LAS FLECHAS PARA CAMBIAR DE PÁGINA</span></div>
         </section>
 
         <aside class="study-sidebar">
+
+          <section class="study-card metronome-card">
+            <div class="card-heading"><div><p class="eyebrow">PULSO Y TEMPO</p><h3>Metrónomo</h3></div><span class="mini-symbol">♩</span></div>
+            <div class="metronome-readout"><strong id="metronome-bpm-label">80</strong><span>BPM</span><span class="beat-indicator" id="metronome-beat-indicator" aria-label="Pulso">● ● ● ●</span></div>
+            <label class="field-label tempo-control">Velocidad<input id="metronome-bpm" type="range" min="30" max="240" step="1" value="80"></label>
+            <div class="metronome-settings"><label class="field-label">Compás<select id="metronome-meter"><option value="2">2/4</option><option value="3">3/4</option><option value="4" selected>4/4</option><option value="6">6/8</option></select></label><div class="metronome-buttons"><button class="button button-primary button-small" id="metronome-start" type="button">Iniciar</button><button class="button button-outline button-small" id="metronome-stop" type="button" disabled>Detener</button></div></div>
+            <p class="goal-status">El tempo queda guardado para esta obra. El primer pulso de cada compás suena acentuado.</p>
+          </section>
+
           <section class="study-card units-card">
             <div class="card-heading"><div><p class="eyebrow">TRABAJO POR PARTES</p><h3>Fragmentos</h3></div><span class="card-number" id="unit-count">00</span></div>
             <p class="muted-copy">Dividí cada página en compases o secciones. Los niveles aportan: Pendiente 0%, Aprendiendo 25%, En práctica 60% y Dominado 100%.</p>
@@ -208,5 +262,6 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="app.js"></script>
+  <script src="enhancements.js"></script>
 </body>
 </html>

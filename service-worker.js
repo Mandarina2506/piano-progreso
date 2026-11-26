@@ -1,7 +1,7 @@
-const CACHE_NAME = 'piano-progreso-v3';
+const CACHE_NAME = 'piano-progreso-v4';
 const APP_FILES = [
   './', './index.html', './styles.css', './app.js', './manifest.webmanifest', './icon.svg',
-  './assets/piano-rose-portrait.jpg', './assets/piano-rose-detail.jpg'
+  './assets/piano-rose-portrait.jpg', './assets/piano-rose-detail.jpg', './enhancements.js'
 ];
 
 self.addEventListener('install', event => {
